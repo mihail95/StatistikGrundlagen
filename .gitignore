@@ -46,7 +46,7 @@ docs/
 po/*~
 
 # csv Files
-.csv
+*.csv
 
 # RStudio Connect folder
 rsconnect/

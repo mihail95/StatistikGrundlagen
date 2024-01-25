@@ -1,0 +1,198 @@
+---
+title: "Fragen zu Sitzung 4 (Wintersemester 2023/24)"
+output:
+  word_document: default
+  html_notebook: default
+---
+
+------------------------------------------------------------------------
+
+**Daten aus Aufgabe einlesen usw:**
+
+```{r}
+# Pakete laden:
+library(readxl)
+library(ggplot2)
+
+# Daten einlesen usw.:
+ELP <- read.csv("ELP_full_length_frequency.csv", sep= ",", dec= ".", header = TRUE)
+SV <- read.csv("winter_2016_senses_valence.csv", sep= ",", dec= ".", header = TRUE)
+
+SV_ELP <- merge(SV, ELP, by = "Word")
+SV_ELP <- SV_ELP[SV_ELP$Modality == "Taste"|SV_ELP$Modality == "Smell", ]
+```
+
+------------------------------------------------------------------------
+
+**Fragen zu R-Code etc.:**
+
+-   Wie genau werden ELP und SV gemerged?
+
+    ```{r}
+    # merge führt data frames zusammen.
+    # Der Parameter "by" gibt an, nach welchen Spalten das passieren soll. 
+    # Schauen wir mal: 
+    str(ELP)
+    str(SV)
+    intersect(unique(SV$Word), unique(ELP$Word))
+    intersect(colnames(ELP), colnames(SV))
+    # wie viele Zeilen und Spalten erwarten wir? 
+    ?merge
+    SV_ELP <- merge(SV, ELP, by = "Word")
+    SV_ELP2 <- merge(x = SV, y = ELP, by = "Word", all.x = TRUE)
+    sum(is.na(SV_ELP2$Log10Freq))
+    SV_ELP3 <- merge(x = SV, y = ELP, by = "Word", all.y = TRUE)
+    sum(is.na(SV_ELP3$Modality))
+    SV_ELP4 <- merge(SV, ELP, by = "Word", all.x = TRUE, all.y = TRUE)
+
+    ```
+
+-   Wofür ist der Parameter geom_point() in ggplot zuständig?
+
+    ```{r}
+    ggplot(SV_ELP, aes(x = length, y = RT)) +
+      geom_point() +
+      geom_smooth(method = "lm", se = FALSE) 
+
+    ggplot(SV_ELP, aes(x = length, y = RT)) +
+      geom_smooth(method = "lm", se = FALSE) 
+
+    ?geom_jitter
+    ggplot(SV_ELP, aes(x = length, y = RT)) +
+      geom_jitter(width = 0.5) +
+      geom_point() + 
+      geom_smooth(method = "lm", se = TRUE) 
+
+    ```
+
+-   Was macht genau die summary()-Funktion?
+
+    ```{r}
+    summary(lm2 <- lm(RT ~ Log10Freq + length, data = SV_ELP))
+    lm2 <- lm(RT ~ Log10Freq + length, data = SV_ELP)
+    summary(lm2)
+
+    summary(SV)
+    ```
+
+-   Wie sieht der Code aus für Frage 6?
+
+    *Anmerkung (JW):*\
+    In Frage 6 sollten die Prädiktoren aus dem Modell in Frage 4 standardisiert werden, bevor ein neues Modell berechnet werden sollte:
+
+    ```{r}
+    # Code aus Frage 4:
+    summary(lm2 <- lm(RT ~ Log10Freq + length, data = SV_ELP))
+
+    # Und jetzt mit skalierten Prädiktoren:
+    summary(lm2 <- lm(scale(RT) ~ scale(Log10Freq) + scale(length), data = SV_ELP))
+    ```
+
+-   Warum sollten wir Daten aus SPSS mit Daten aus R vergleichen?
+
+Gruppen:
+
+-   Berechnen Sie die z-Transformation für RT in SV_ELP a) '"zu Fuss" und einmal b) mittels scale(); a - b = 0
+
+```{r}
+# z-Wert = (Wert - mean) / sd
+zWertePerHand <- (SV_ELP$RT - mean(SV_ELP$RT)) / sd(SV_ELP$RT)
+
+zWerteAuto <- scale(SV_ELP$RT)
+zWerteCompare <- cbind(zWerteAuto, zWertePerHand)
+```
+
+-   Was genau ist bei lm(RT \~ Log10Freq \* length, data = SV_ELP) die Auswirkung davon, dass man \* statt + schreibt?
+
+-   lm(RT \~ Log10Freq \* length, data = SV_ELP) Die Multiplikation in diesem Modell bezieht sich dann nur auf die Interaktion, wohingegen die Addition nur die (zwei) Faktoren darstellt?
+
+-   Wie gut ein Modell passt sieht man an R^2^, aber wie genau soll man das lesen?
+
+-   Ist es möglich, dass ein Prädiktor in einem linearen Modell metrisch skaliert ist und ein anderer kategorial skaliert?
+
+-   Woran genau kann man erkennen, ob der Unterschied zwischen Smell- und Taste- Wörtern signifikant ist?
+
+    ```{r}
+    summary(lm3 <- lm(RT ~ Modality, data = SV_ELP))
+    ```
+
+-   Was macht das adjusitierte R\^2?
+
+-   Warum braucht man eine z-Transformation um die Effektgrößen vergleichen zu können?
+
+-   Soll man beim Berechnen von multipler linearer Regression immer die Standardisierung durchführen?
+
+**Dummy-Kodierung:**
+
+-   Wie kann man die Dummy-Kodierung selber durchführen?
+
+-   Dummy-Kodierung: Was genau macht die contrasts() Funktion?
+
+-   Dummy-Kodierung: Was passiert in dem Linearen Modell, wenn wir z.B. 3 verschiedene Levels haben (z.B kurz/mittel/lang - ohne die Levels umzuordnen). Wird das Modell 2 Mal getestet? (mit kurz als Intercept und mittel als Slope gegen kurz als Intercept und lang als Slope)
+
+**Interaktionen:**
+
+-   Ich habe nicht ganz verstanden, wo in R ich die Informationen über Interaktion finden kann und wie ich ein ggplot erstellen kann.
+
+-   Wie ist ein Interaktionseffekt zu deuten, wenn mehr als zwei Variablen involviert sind?
+
+-   Was ist die einfachste Art, sich den Interaktionseffekt in R anzeigen zu lassen?
+
+-   Regressionsmodelle visualisieren: In welche Fälle ist einem Modell ohne Interaktionseffekte nützlich (sowas wie lm(mpg\~disp + am, data=mtcars). Ist es nicht immer wichig diese Effekte zu modellieren (etweder durch 2 Separate Modelle oder mithilfe dem Interaktionsoperator '\*')?
+
+**Modellbewertung und -interpretation:**
+
+-   Warum erklärt die Daten das Modell lm am besten, wenn es keine Interaktion gibt?
+
+-   Wie werden die Koeffizienten in einem multiplen Regressionsmodell bestimmt und interpretiert?
+
+-   Kann ein Modell einen signifikanten F-Wert und nicht signifikante unabhängige Variablen haben?
+
+-   Ist die Spalte Probability mit dem P-Wert gleichzusetzen?
+
+-   Gibt es eine Mindestzahl für R-Quadrat, die erreicht werden muss, um ein Modell zu verwenden
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+**Aufgabe 4, Frage 5 (Stand: 15.11.2023, 16 Uhr)**
+
+*Aufgabenstellung: Modell aus Frage 4 ansehen und beurteilen, ob und welchen Einfluss der Faktor Wortlänge auf die Reaktionszeit hat.*
+
+```{r}
+# Modell aus Frage 4:
+summary(lm2 <- lm(RT ~ Log10Freq + length, data = SV_ELP))
+```
+
+------------------------------------------------------------------------
+
+Die Wortlänge ist ein signifikanter(\*) Einflussfaktor auf die Reaktionszeit, da diese umso größer wird, je länger ein Wort ist (im Schnitt 12,35 ms/char?).
+
+Was sich auch an Abbildung 2 in Aufgabe beobachten lässt.
+
+```{r}
+ggplot(SV_ELP, aes(x = length, y = RT)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) 
+```
+
+------------------------------------------------------------------------
+
+Die Wortlänge hat einen signifikanten (p \< 0,05) Einfluss auf die Reaktionszeit. Je länger ein Wort ist, desto länger die Reaktionszeit.
+
+------------------------------------------------------------------------
+
+Wortlänge ist ein niedrig signifikanter Einflussfaktor auf die Reaktionszeit. Wenn die Wortlänge steigt, steigt auch die Reaktionszeit.
+
+------------------------------------------------------------------------
+
+Ja, p-Wert liegt zwischen 0,01 und 0,05. Für jede weitere Buchstabe steigt die Reaktionszeit mit 12,352 ms (y = a + 12,325\*x).
+
+------------------------------------------------------------------------
+
+Wortlänge ist ein signifikanter, aber kein hoch signifikanter Einflussfaktor auf die Reaktionszeit. Steigt die Wortlänge, werden die Reaktionszeiten länger.
+
+------------------------------------------------------------------------
+
+ja, es ist signifikant, aber nicht sehr hoch (nur ein \*). für eine weitere Analyse müsste man aber alle Werte z-standardisieren, damit man den Einfluss der Wortlänge auch im Vergleich zur Frequenz betrachten und bewerten kann.
