@@ -48,5 +48,8 @@ po/*~
 # csv Files
 *.csv
 
+# pdf Files
+*.pdf
+
 # RStudio Connect folder
 rsconnect/
